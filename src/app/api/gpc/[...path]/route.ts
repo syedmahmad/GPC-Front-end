@@ -28,4 +28,4 @@ async function forward(request: NextRequest, ctx: RouteContext<"/api/gpc/[...pat
   }
 }
 
-export { forward as GET, forward as POST, forward as DELETE };
+export { forward as GET, forward as POST, forward as PATCH, forward as DELETE };

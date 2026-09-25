@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Info, InfoTip } from "./InfoTip";
 
 export interface Column<Row> {
   header: string;
@@ -8,6 +9,12 @@ export interface Column<Row> {
   align?: "left" | "right";
   /** Keeps a long value on one line (dates, ids). */
   nowrap?: boolean;
+  /** Minimum width, so wide values (titles, names) are not squeezed. */
+  minWidth?: string;
+  /** Adds an "i" icon to the header explaining where this value comes from. */
+  info?: Info;
+  /** The name GPC uses for this value in partnerEditedFields (to show "edited by you"). */
+  field?: string;
 }
 
 interface DataTableProps<Row> {
@@ -54,7 +61,7 @@ export function DataTable<Row>({
           </span>
         </div>
       )}
-      <div className="max-h-[32rem] overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="max-h-[36rem] overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
         <table className="w-full min-w-max border-collapse text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead className="sticky top-0 bg-zinc-100 dark:bg-zinc-800">
@@ -63,11 +70,15 @@ export function DataTable<Row>({
                 <th
                   key={column.header}
                   scope="col"
-                  className={`px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 ${
+                  style={column.minWidth ? { minWidth: column.minWidth } : undefined}
+                  className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 ${
                     column.align === "right" ? "text-right" : "text-left"
                   }`}
                 >
-                  {column.header}
+                  <span className={`inline-flex items-center gap-1.5 ${column.align === "right" ? "flex-row-reverse" : ""}`}>
+                    {column.header}
+                    {column.info && <InfoTip info={column.info} label={column.header} />}
+                  </span>
                 </th>
               ))}
             </tr>
@@ -75,7 +86,7 @@ export function DataTable<Row>({
           <tbody>
             {shown.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-3 py-10 text-center text-zinc-500">
+                <td colSpan={columns.length} className="px-4 py-10 text-center text-zinc-500">
                   {rows.length === 0 ? emptyMessage : "Nothing matches your search."}
                 </td>
               </tr>
@@ -88,7 +99,7 @@ export function DataTable<Row>({
                   {columns.map((column) => (
                     <td
                       key={column.header}
-                      className={`px-3 py-2 align-top ${column.align === "right" ? "text-right tabular-nums" : ""} ${
+                      className={`px-4 py-3 align-top ${column.align === "right" ? "text-right tabular-nums" : ""} ${
                         column.nowrap ? "whitespace-nowrap" : ""
                       }`}
                     >

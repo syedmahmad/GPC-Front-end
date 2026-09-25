@@ -50,6 +50,12 @@ export interface Property {
   bedrooms: number | null;
   bathrooms: number | null;
   areaSquareFeet: number | null;
+  timezone: string | null;
+  defaultCheckInTime: string | null;
+  defaultCheckOutTime: string | null;
+  /** Fields a partner has set through the API; a sync never overwrites these. */
+  partnerEditedFields: string[];
+  lastSyncedAt: string | null;
   address: {
     full: string | null;
     street: string | null;
@@ -85,6 +91,12 @@ export interface Reservation {
   checkOut: string;
   nights: number | null;
   guestsCount: number | null;
+  numberOfAdults: number | null;
+  numberOfChildren: number | null;
+  numberOfInfants: number | null;
+  numberOfPets: number | null;
+  partnerEditedFields: string[];
+  confirmationCode: string | null;
   currency: string | null;
   money: {
     totalPaid: number | null;
@@ -118,4 +130,30 @@ export interface ConnectInput {
   applicationLogin: string;
   apiKey: string;
   label?: string;
+}
+
+/** What a partner may fill in or correct on a property (PATCH /properties/:id). */
+export interface PropertyEdit {
+  street?: string;
+  buildingNumber?: string;
+  apartmentNumber?: string;
+  city?: string;
+  state?: string;
+  zipcode?: string;
+  country?: string;
+  accommodates?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  areaSquareMetres?: number;
+  defaultCheckInTime?: string;
+  defaultCheckOutTime?: string;
+}
+
+/** What a partner may fill in or correct on a reservation (PATCH /reservations/:id). */
+export interface ReservationEdit {
+  numberOfAdults?: number;
+  numberOfChildren?: number;
+  numberOfInfants?: number;
+  numberOfPets?: number;
+  guest?: { firstName?: string; lastName?: string; email?: string; phone?: string; country?: string };
 }

@@ -16,6 +16,8 @@ const PERMISSIONS = [
   "connections:manage",
   "properties:read",
   "reservations:read",
+  "properties:write",
+  "reservations:write",
   "guests:name",
   "guests:contact",
 ];
@@ -30,6 +32,8 @@ const ALLOWED: RegExp[] = [
   new RegExp(`^POST /connections/${UUID}/sync$`),
   new RegExp(`^GET /properties(/${UUID})?$`),
   new RegExp(`^GET /reservations(/${UUID})?$`),
+  new RegExp(`^PATCH /properties/${UUID}$`),
+  new RegExp(`^PATCH /reservations/${UUID}$`),
 ];
 
 export const isAllowed = (method: string, target: string): boolean =>
@@ -39,7 +43,12 @@ interface Credential {
   clientId: string;
   clientSecret: string;
   accountId: string;
+  /** What this credential was issued with, so an outdated one can be replaced. */
+  permissions: string[];
 }
+
+const samePermissions = (a: string[] | undefined) =>
+  !!a && a.length === PERMISSIONS.length && PERMISSIONS.every((permission) => a.includes(permission));
 
 let credential: Credential | undefined;
 let token: { value: string; expiresAt: number } | undefined;
@@ -74,8 +83,13 @@ async function rawFetch(
 async function ensureCredential(): Promise<Credential> {
   if (credential) return credential;
   if (fs.existsSync(STATE_FILE)) {
-    credential = JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) as Credential;
-    return credential;
+    const saved = JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) as Credential;
+    // A credential saved before new permissions existed cannot do the new
+    // things, so it is replaced (below) instead of reused.
+    if (samePermissions(saved.permissions)) {
+      credential = saved;
+      return credential;
+    }
   }
 
   const id = process.env.PLATFORM_CLIENT_ID;
@@ -111,6 +125,7 @@ async function ensureCredential(): Promise<Credential> {
     clientId: issuedBody.clientId,
     clientSecret: issuedBody.clientSecret,
     accountId: accountBody.id,
+    permissions: PERMISSIONS,
   };
   fs.writeFileSync(STATE_FILE, JSON.stringify(credential), { mode: 0o600 });
   return credential;

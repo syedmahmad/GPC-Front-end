@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ConnectInput } from "@/lib/types";
+import { Field, inputClass } from "./FormField";
 
 export type SubmitResult = { ok: true } | { ok: false; message: string; reason?: string };
 
@@ -47,46 +48,6 @@ function validate(values: Values): Errors {
   return errors;
 }
 
-function Field({
-  id,
-  label,
-  required,
-  hint,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  required?: boolean;
-  hint: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between">
-        <label htmlFor={id} className="text-sm font-semibold">
-          {label}
-          {required && <span className="ml-0.5 text-red-600" aria-hidden="true"> *</span>}
-        </label>
-        <span className={`text-xs font-medium ${required ? "text-red-600 dark:text-red-400" : "text-zinc-500"}`}>
-          {required ? "Required" : "Optional"}
-        </span>
-      </div>
-      {children}
-      {error ? (
-        <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      ) : (
-        <p className="mt-1 text-xs text-zinc-500">{hint}</p>
-      )}
-    </div>
-  );
-}
-
-const inputClass =
-  "w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900";
 
 export function ConnectForm({ onSubmit, onCancel }: ConnectFormProps) {
   const [values, setValues] = useState<Values>({ apiUrl: "", applicationLogin: "", apiKey: "", label: "" });

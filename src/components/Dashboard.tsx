@@ -10,12 +10,16 @@ import type {
   ConnectInput,
   Page,
   Property,
+  PropertyEdit,
   Reservation,
+  ReservationEdit,
 } from "@/lib/types";
 import { ApiActivity } from "./ApiActivity";
 import { ConnectForm, SubmitResult } from "./ConnectForm";
 import { ConnectionPanel } from "./ConnectionPanel";
 import { PropertiesTable } from "./PropertiesTable";
+import { PropertyDrawer } from "./PropertyDrawer";
+import { ReservationDrawer } from "./ReservationDrawer";
 import { ReservationsTable } from "./ReservationsTable";
 
 const POLL_MS = 1500;
@@ -33,6 +37,10 @@ export function Dashboard() {
   const [formOpen, setFormOpen] = useState(false);
   const [watching, setWatching] = useState(false);
   const [problem, setProblem] = useState<string | undefined>();
+  // The row being looked at. It stays set while the drawer slides away, so the
+  // animation has something to draw; `drawerOpen` is what actually hides it.
+  const [viewing, setViewing] = useState<{ kind: "property"; row: Property } | { kind: "reservation"; row: Reservation } | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     const [p, r] = await Promise.all([
@@ -102,6 +110,25 @@ export function Dashboard() {
     return { ok: true };
   }
 
+  function view(target: NonNullable<typeof viewing>) {
+    setViewing(target);
+    setDrawerOpen(true);
+  }
+
+  async function saveProperty(id: string, edit: PropertyEdit): Promise<{ property: Property } | { error: string }> {
+    const result = await call<Property & ApiErrorBody>("PATCH", `/properties/${id}`, edit);
+    if (!result.ok) return { error: errorText(result.body) };
+    setProperties((rows) => rows.map((row) => (row.id === id ? result.body : row)));
+    return { property: result.body };
+  }
+
+  async function saveReservation(id: string, edit: ReservationEdit): Promise<{ reservation: Reservation } | { error: string }> {
+    const result = await call<Reservation & ApiErrorBody>("PATCH", `/reservations/${id}`, edit);
+    if (!result.ok) return { error: errorText(result.body) };
+    setReservations((rows) => rows.map((row) => (row.id === id ? result.body : row)));
+    return { reservation: result.body };
+  }
+
   async function syncNow() {
     if (!connection) return;
     const result = await call("POST", `/connections/${connection.id}/sync`);
@@ -125,7 +152,7 @@ export function Dashboard() {
   const hasData = connection !== null && connection.status !== "DISCONNECTED";
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 px-4 py-6">
+    <div className="mx-auto max-w-[1700px] space-y-5 px-6 py-6">
       <div className="space-y-5">
         <ConnectionPanel
           connection={connection}
@@ -164,9 +191,13 @@ export function Dashboard() {
 
             <div className="mt-4">
               {tab === "properties" ? (
-                <PropertiesTable properties={properties} />
+                <PropertiesTable properties={properties} onView={(row) => view({ kind: "property", row })} />
               ) : (
-                <ReservationsTable reservations={reservations} properties={properties} />
+                <ReservationsTable
+                  reservations={reservations}
+                  properties={properties}
+                  onView={(row) => view({ kind: "reservation", row })}
+                />
               )}
             </div>
           </section>
@@ -174,6 +205,26 @@ export function Dashboard() {
       </div>
 
       <ApiActivity />
+
+      {viewing?.kind === "property" && (
+        <PropertyDrawer
+          key={viewing.row.id}
+          property={viewing.row}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onSave={saveProperty}
+        />
+      )}
+      {viewing?.kind === "reservation" && (
+        <ReservationDrawer
+          key={viewing.row.id}
+          reservation={viewing.row}
+          properties={properties}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onSave={saveReservation}
+        />
+      )}
 
       {formOpen && <ConnectForm onSubmit={connect} onCancel={() => setFormOpen(false)} />}
     </div>

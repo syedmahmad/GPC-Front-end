@@ -31,6 +31,22 @@ secret is ever sent to the browser.
 
 These match what `POST /connections/idobooking` accepts.
 
+## Viewing and editing
+
+Every row has a **View** button that opens a side drawer (built on Headless UI's
+Dialog, which handles focus, Escape, backdrop click and scroll lock). The drawer
+lists the details with an info icon on each label, and an **Edit** button.
+
+Editing sends only the fields that changed (`PATCH /properties/:id`,
+`PATCH /reservations/:id`) and is gated by an "I am sure these details are
+correct" tick. Saved values are remembered as the partner's, and later syncs from
+iDoBooking never overwrite them (marked "edited by you"). Dates, status, money and
+the booked unit always come from iDoBooking and cannot be edited.
+
+The demo credential now carries the `properties:write` and `reservations:write`
+permissions. A credential saved by an older version is replaced automatically the
+next time the app talks to GPC.
+
 ## Run it
 
 You need the API running with a database, and a platform key.
